@@ -15,6 +15,7 @@
   --img-size: 96px;
   --gap: 12px;
   --pad: 16px;
+  --item-radius: 12px;
   --sep-left: 4px;
   --sep-right: 2px;
   --sep-right-color: #44444a;
@@ -433,7 +434,7 @@ main {
   flex: none;
   width: var(--img-size);
   height: var(--img-size);
-  border-radius: 12px;
+  border-radius: var(--item-radius, 12px);
   cursor: grab;
   transition: filter 140ms ease, opacity 140ms ease, transform 140ms ease;
 }
@@ -872,6 +873,30 @@ main {
 @media (max-width: 620px) {
   .app {
     padding: 20px 12px 28px;
+  }
+
+  .tier-label-text:focus {
+    outline-offset: 4px;
+  }
+
+  .row-del {
+    top: 4px;
+    right: 4px;
+    width: 18px;
+    height: 18px;
+    font-size: 13px;
+  }
+
+  .item-del {
+    top: -6px;
+    right: -6px;
+    width: 18px;
+    height: 18px;
+    font-size: 12px;
+  }
+
+  .row-hint {
+    font-size: 12px;
   }
 
   .brand-copy h1 {

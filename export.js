@@ -26,14 +26,16 @@
     return value || '"Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif';
   }
 
-  function labelFontSize(text) {
-    const maxWidth = LAYOUT.leftW - 24;
+  function labelFontSize(text, options = {}) {
+    const maxWidth = options.maxWidth ?? LAYOUT.leftW - 24;
+    const maxSize = options.maxSize ?? LAYOUT.maxLabel;
+    const minSize = options.minSize ?? 9;
     const family = labelFontFamily();
-    let size = LAYOUT.maxLabel;
+    let size = maxSize;
     measureCtx.font = `900 ${size}px ${family}`;
     const width = measureCtx.measureText(text || " ").width;
     if (width > maxWidth) {
-      size = Math.max(9, Math.floor(size * (maxWidth / width)));
+      size = Math.max(minSize, Math.floor(size * (maxWidth / width)));
     }
     return size;
   }

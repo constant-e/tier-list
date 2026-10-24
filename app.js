@@ -11,6 +11,8 @@
     gap: 12,
     pad: 16,
     minRight: 1020,
+    maxLabel: 74,
+    imgRadius: 12,
   };
 
   const STORAGE_KEY = "tier-list-maker:v1";
@@ -34,6 +36,7 @@
   const toastEl = $("#toast");
   const exportBtn = $("#export");
   const protocolWarning = $("#protocol-warning");
+  const appMain = $("main");
 
   if (!DATA || !DATA.games) {
     board.innerHTML =
@@ -63,6 +66,7 @@
   let toastTimer = 0;
   let saveWarningShown = false;
   let importing = false;
+  let screenLayout = computeScreenLayout();
 
   applyLayoutVariables();
   state = loadState();
@@ -77,13 +81,70 @@
     dataDate.textContent = DATA.generatedAt ? `角色数据更新于 ${DATA.generatedAt}` : "";
   }
 
+  function computeScreenLayout() {
+    const available = Math.max(180, appMain?.clientWidth || document.documentElement.clientWidth);
+    const compact = window.matchMedia("(max-width: 620px)").matches;
+    const medium = !compact && window.matchMedia("(max-width: 900px)").matches;
+
+    const spec = compact
+      ? { leftW: 96, rowH: 96, img: 64, gap: 8, pad: 10, maxLabel: 52, minLabel: 7, radius: 9, compact: true }
+      : medium
+        ? { leftW: 120, rowH: 120, img: 80, gap: 10, pad: 12, maxLabel: 62, minLabel: 8, radius: 10, compact: false }
+        : {
+            leftW: LAYOUT.leftW,
+            rowH: LAYOUT.rowH,
+            img: LAYOUT.img,
+            gap: LAYOUT.gap,
+            pad: LAYOUT.pad,
+            maxLabel: LAYOUT.maxLabel,
+            minLabel: 9,
+            radius: LAYOUT.imgRadius,
+            compact: false,
+          };
+
+    // On wide screens keep the established 1160px table. On narrower
+    // screens, shrink the right column to fit the content area instead of
+    // forcing a full-width horizontal scroll from the start.
+    const minRight =
+      available >= spec.leftW + LAYOUT.minRight
+        ? LAYOUT.minRight
+        : Math.max(compact ? 180 : 240, available - spec.leftW);
+
+    return { ...spec, minRight };
+  }
+
+  function layoutDiffers(a, b) {
+    return ["leftW", "rowH", "img", "gap", "pad", "minRight", "maxLabel", "minLabel", "radius"].some(
+      (key) => a[key] !== b[key]
+    );
+  }
+
   function applyLayoutVariables() {
     const root = document.documentElement;
-    root.style.setProperty("--left-w", `${LAYOUT.leftW}px`);
-    root.style.setProperty("--row-h", `${LAYOUT.rowH}px`);
-    root.style.setProperty("--img-size", `${LAYOUT.img}px`);
-    root.style.setProperty("--gap", `${LAYOUT.gap}px`);
-    root.style.setProperty("--pad", `${LAYOUT.pad}px`);
+    root.style.setProperty("--left-w", `${screenLayout.leftW}px`);
+    root.style.setProperty("--row-h", `${screenLayout.rowH}px`);
+    root.style.setProperty("--img-size", `${screenLayout.img}px`);
+    root.style.setProperty("--gap", `${screenLayout.gap}px`);
+    root.style.setProperty("--pad", `${screenLayout.pad}px`);
+    root.style.setProperty("--item-radius", `${screenLayout.radius}px`);
+  }
+
+  function screenLabelFontSize(text) {
+    return TierExport.labelFontSize(text, {
+      maxWidth: screenLayout.leftW - 22,
+      maxSize: screenLayout.maxLabel,
+      minSize: screenLayout.minLabel,
+    });
+  }
+
+  function screenRightWidth(rows) {
+    let maxItems = 0;
+    for (const row of rows) maxItems = Math.max(maxItems, row.items.length);
+    const content =
+      screenLayout.pad * 2 +
+      maxItems * screenLayout.img +
+      Math.max(0, maxItems - 1) * screenLayout.gap;
+    return Math.max(screenLayout.minRight, content);
   }
 
   function escapeHtml(value) {
@@ -230,15 +291,18 @@
   }
 
   function renderBoard() {
-    const rightWidth = TierExport.rightWidth(state.rows);
+    const rightWidth = screenRightWidth(state.rows);
     const empty = totalItems() === 0;
+    const hintText = screenLayout.compact
+      ? "点击或拖拽头像到这里"
+      : "从下方头像库点击或拖拽头像到这里";
     board.style.setProperty("--right-w", `${rightWidth}px`);
-    board.style.width = `${LAYOUT.leftW + rightWidth}px`;
+    board.style.width = `${screenLayout.leftW + rightWidth}px`;
 
     const rowsHtml = state.rows
       .map((row, rowIndex) => {
         const color = TierExport.tierColor(rowIndex, state.rows.length);
-        const fontSize = TierExport.labelFontSize(row.label || " ");
+        const fontSize = screenLabelFontSize(row.label || " ");
         const itemsHtml = row.items
           .map((key, itemIndex) => {
             const item = resolveItem(key);
@@ -254,7 +318,7 @@
 
         const hint =
           empty && rowIndex === 0
-            ? '<span class="row-hint">从下方头像库点击或拖拽头像到这里</span>'
+            ? `<span class="row-hint">${hintText}</span>`
             : "";
 
         return `
@@ -335,7 +399,7 @@
     const item = items[items.length - 1];
     const scrollRect = boardScroll.getBoundingClientRect();
     const itemRect = item.getBoundingClientRect();
-    const leftEdge = scrollRect.left + LAYOUT.leftW;
+    const leftEdge = scrollRect.left + screenLayout.leftW;
     if (itemRect.right > scrollRect.right - 14) {
       boardScroll.scrollLeft += itemRect.right - scrollRect.right + 24;
     } else if (itemRect.left < leftEdge) {
@@ -628,7 +692,10 @@
       indicator.className = "drop-indicator";
       cell.append(indicator);
     }
-    const x = LAYOUT.pad + index * (LAYOUT.img + LAYOUT.gap) - LAYOUT.gap / 2;
+    const x =
+      screenLayout.pad +
+      index * (screenLayout.img + screenLayout.gap) -
+      screenLayout.gap / 2;
     indicator.style.left = `${Math.max(4, x)}px`;
   }
 
@@ -657,7 +724,13 @@
     event.dataTransfer.setData("text/plain", "move");
     item.classList.add("dragging");
     const image = $("img", item);
-    if (image) event.dataTransfer.setDragImage(image, LAYOUT.img / 2, LAYOUT.img / 2);
+    if (image) {
+      event.dataTransfer.setDragImage(
+        image,
+        screenLayout.img / 2,
+        screenLayout.img / 2
+      );
+    }
   }
 
   function handleDrop(event, cell) {
@@ -722,7 +795,7 @@
       placeCaretAtEnd(label);
     }
     row.label = text;
-    label.style.fontSize = `${TierExport.labelFontSize(text || " ")}px`;
+    label.style.fontSize = `${screenLabelFontSize(text || " ")}px`;
     updateTargetOption(rowIndex);
     scheduleSave();
   });
@@ -736,7 +809,7 @@
     const text = sanitizeLabel(label.textContent) || "?";
     row.label = text;
     label.textContent = text;
-    label.style.fontSize = `${TierExport.labelFontSize(text)}px`;
+    label.style.fontSize = `${screenLabelFontSize(text)}px`;
     updateTargetOption(rowIndex);
     scheduleSave();
   }, true);
@@ -754,7 +827,7 @@
       if (row) {
         row.label = sanitizeLabel(label.dataset.original) || "?";
         label.textContent = row.label;
-        label.style.fontSize = `${TierExport.labelFontSize(row.label)}px`;
+        label.style.fontSize = `${screenLabelFontSize(row.label)}px`;
         updateTargetOption(rowIndex);
         scheduleSave();
       }
@@ -806,7 +879,7 @@
     const rect = boardScroll.getBoundingClientRect();
     if (event.clientX > rect.right - 46) {
       boardScroll.scrollLeft += 18;
-    } else if (event.clientX < rect.left + LAYOUT.leftW + 46) {
+    } else if (event.clientX < rect.left + screenLayout.leftW + 46) {
       boardScroll.scrollLeft -= 18;
     }
   });
@@ -911,6 +984,20 @@
 
   window.addEventListener("pagehide", saveNow);
 
+  let resizeTimer = 0;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      const next = computeScreenLayout();
+      if (!layoutDiffers(screenLayout, next)) return;
+      screenLayout = next;
+      applyLayoutVariables();
+      renderBoard();
+    }, 120);
+  });
+
   renderLibrary();
+  screenLayout = computeScreenLayout();
+  applyLayoutVariables();
   renderBoard();
 })();
