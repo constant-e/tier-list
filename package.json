@@ -1,0 +1,12 @@
+{
+  "name": "tier-list-maker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A local, dependency-free tier list maker with bundled HoYoverse avatars and PNG export.",
+  "scripts": {
+    "start": "node server.js",
+    "build:library": "node scripts/build-library.mjs",
+    "build:site": "node scripts/build-site.mjs"
+  }
+}

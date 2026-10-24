@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#09090b" />
+    <title>分级列表制作器 · Tier List Maker</title>
+    <meta
+      name="description"
+      content="可自定义分级的图片分级列表制作器，内置原神、崩坏：星穹铁道、绝区零角色头像，支持导入图片与导出 PNG。"
+    />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <div id="protocol-warning" class="banner" hidden>
+        当前通过本地文件打开，浏览器会阻止图片导出。请在项目目录运行
+        <code>npm start</code>，然后访问 <code>http://localhost:8000</code>。
+      </div>
+
+      <header class="app-header">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+          <div class="brand-copy">
+            <h1>分级列表制作器</h1>
+            <p>点击或拖拽头像加入目标行 · 拖动可排序 · 双击图片移除</p>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <label class="target-field" for="target-row">
+            <span>添加到</span>
+            <select id="target-row" aria-label="目标行"></select>
+          </label>
+          <button type="button" class="btn" id="add-row">＋ 添加行</button>
+          <button type="button" class="btn" id="reset">重置</button>
+          <button type="button" class="btn" id="import">导入图片</button>
+          <button type="button" class="btn btn-primary" id="export">导出 PNG</button>
+        </div>
+      </header>
+
+      <main>
+        <section class="board-card" aria-label="分级列表">
+          <div class="board-scroll" id="board-scroll">
+            <div class="board" id="board" aria-label="Tier list"></div>
+          </div>
+          <div class="board-meta">
+            <p class="hint">
+              左侧色块文字可直接编辑，悬停色块可删除该行。右侧行内仅以间距区分头像。
+            </p>
+            <p class="stats" id="board-stats"></p>
+          </div>
+        </section>
+
+        <section class="library" aria-labelledby="library-title">
+          <div class="library-head">
+            <div class="library-title">
+              <h2 id="library-title">头像库</h2>
+              <p id="library-subtitle">内置三个游戏的角色头像，也可以导入自己的图片。</p>
+            </div>
+            <div class="library-tools">
+              <label class="search">
+                <span class="visually-hidden">搜索角色</span>
+                <input
+                  type="search"
+                  id="search"
+                  placeholder="搜索角色（中文 / 英文）"
+                  autocomplete="off"
+                  spellcheck="false"
+                />
+              </label>
+              <button type="button" class="btn" id="import-2">导入图片</button>
+            </div>
+          </div>
+
+          <div class="tabs" role="tablist" aria-label="头像分类">
+            <button type="button" class="tab is-active" data-tab="gi" role="tab" aria-selected="true">
+              原神 <span class="count" data-count="gi">0</span>
+            </button>
+            <button type="button" class="tab" data-tab="hsr" role="tab" aria-selected="false">
+              崩坏：星穹铁道 <span class="count" data-count="hsr">0</span>
+            </button>
+            <button type="button" class="tab" data-tab="zzz" role="tab" aria-selected="false">
+              绝区零 <span class="count" data-count="zzz">0</span>
+            </button>
+            <button type="button" class="tab" data-tab="imports" role="tab" aria-selected="false">
+              我的图片 <span class="count" data-count="imports">0</span>
+            </button>
+          </div>
+
+          <div class="library-grid" id="library-grid" role="tabpanel"></div>
+          <p class="library-empty" id="library-empty" hidden></p>
+        </section>
+      </main>
+
+      <footer class="app-footer">
+        <span>角色素材版权归 HoYoverse 所有，仅用于粉丝创作。</span>
+        <span id="data-date"></span>
+      </footer>
+    </div>
+
+    <input type="file" id="file-input" accept="image/*" multiple hidden />
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script src="data/characters.js"></script>
+    <script src="export.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
