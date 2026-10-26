@@ -2,17 +2,6 @@
 
 一个零依赖、纯前端的 Tier List 制作器。左侧是可编辑的红到绿渐变分级色块，右侧是横向排列的角色头像列表；可导入自己的图片，并导出为高清 PNG。
 
-初始角色头像快照：**2026-10-24**，对应原神 **7.1**、崩坏：星穹铁道 **4.6**、绝区零 **3.3**。
-
-| 游戏 | 初始角色数 |
-| --- | --- |
-| 原神 | 124 |
-| 崩坏：星穹铁道 | 98 |
-| 绝区零 | 62 |
-| 合计 | 284 |
-
-启用下方 GitHub Actions 自动更新后，角色数量可能增加；实际状态以 `data/characters.js` 和页面页脚为准。
-
 ## 功能
 
 - 两列 N 行表格：左侧方形纯色分级块，右侧黑色横向头像列表。
@@ -51,30 +40,6 @@ python3 -m http.server 8000
 ```
 
 > 请务必通过 HTTP 服务打开，不要直接双击 `index.html`。浏览器会因本地文件安全策略污染 Canvas，导致导出的 PNG 失败。页面在 `file://` 模式下会显示提示。
-
-## 部署到 GitHub Pages
-
-可以。项目完全静态，资源和脚本均使用相对路径；GitHub Pages 的 HTTPS 同源环境不会污染 Canvas，导出功能正常。
-
-已附带 `.github/workflows/pages.yml`，通过 Actions 发布时只部署成品文件，不会公开 `server.js`、`scripts/` 或 README。
-
-1. 将项目推送到 GitHub，默认分支为 `main`。
-2. 进入仓库 **Settings → Pages → Build and deployment**，把 **Source** 设为 **GitHub Actions**。
-3. 向 `main` 推送一次，或在 Actions 页手动运行 **Deploy static site to GitHub Pages**。
-4. 打开 `https://<用户名>.github.io/<仓库名>/`。
-
-补充说明：
-
-- 如果默认分支是 `master`，把 workflow 中的 `branches: [main]` 改为 `master`。
-- 也可以不用 Actions：将 Pages 的 Source 设为 **Deploy from a branch**，选择 `main` / `(root)`。根目录已有 `.nojekyll`；这种模式会一并公开 `server.js` 和 `scripts/`，推荐使用 Actions。
-- 站点约 18 MB，远低于 GitHub Pages 的容量限制。
-- 本地模拟项目站点子路径：
-
-  ```bash
-  npm run build:site
-  python3 -m http.server 8080
-  # 打开 http://localhost:8080/_site/
-  ```
 
 ## 使用说明
 
@@ -118,6 +83,8 @@ python3 -m http.server 8000
 - 崩坏：星穹铁道：Project Amber 中文/英文数据，头像优先使用 StarRailRes 的 256×256 版本，失败时回退到 Project Amber。
 - 绝区零：Enka.Network 的角色清单/本地化数据，头像使用 Nanoka 的 256×250 角色半身图。
 
+数据每天自动更新。
+
 本地手动更新角色列表：
 
 ```bash
@@ -126,28 +93,6 @@ npm run build:library -- --force  # 强制重下全部头像
 ```
 
 脚本会重新读取上述数据源、下载缺失的头像并重建 `data/characters.js`。需要联网。已有头像默认跳过下载；加 `--force` 会覆盖全部图片。如果没有角色变化，脚本会保留原来的快照日期，不会产生仅时间戳变化的文件；若有头像下载失败，则拒绝写入不完整清单。
-
-### GitHub Actions 自动更新
-
-仓库附带 `.github/workflows/update-library.yml`，每天 03:17 UTC（GitHub 可能延迟）运行，也可在 Actions 页手动触发（手动触发即使没有数据变化也会重新部署当前站点）。它会：
-
-1. 执行 `npm run build:library`，拉取最新角色并下载缺失头像。
-2. 仅在 `data/characters.js` 或 `assets/` 确实有变化时，以 `github-actions[bot]` 身份提交并推送。
-3. 在同一次运行中构建 `_site` 并部署 GitHub Pages。使用默认 `GITHUB_TOKEN` 产生的提交不会再次触发 `pages.yml`，所以这里直接部署，避免站点落后。
-4. 数据源不可用或头像缺失时停止，不提交或发布不完整数据；下次定时任务或手动重跑会重试。
-
-前提与注意：
-
-- Pages 的 Source 必须设置为 **GitHub Actions**（见上节）。
-- 工作流声明了 `contents: write`；如果组织策略或 `main` 分支保护禁止 bot 直接推送，需要允许 GitHub Actions 推送，或改为由 bot 创建 PR 后人工合并。
-- 自动更新只提交数据和 `assets/`，不会改写 README 中的初始数量与版本号；实际状态以 `data/characters.js` 的 `generatedAt` 和页面页脚为准。
-- 想调整频率，修改 workflow 中的 cron 表达式即可。
-
-数据说明：
-
-- 原神、星穹铁道按数据源中的 release 时间戳过滤已发布角色；绝区零使用 Enka 的当前角色清单。
-- 同一头像对应的多个「旅行者」元素形态会合并为一个头像；「开拓者」的不同命途/性别使用不同头像，名称中会标注命途和性别。
-- 如果数据源结构变化，脚本会报错并保留已有文件，不会清空本地头像。
 
 ## 限制
 
